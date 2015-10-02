@@ -1,89 +1,60 @@
-import vim, re
+import vim
+import re
+import itertools
 import heapq
 from datetime import datetime
 
+RE_ESCAPE_QUOTE = re.compile(r'(?=\\|")')
+
+
 def CtrlPPyMatch():
-    items = vim.eval('a:items')
-    astr = vim.eval('a:str')
-    lowAstr = astr.lower()
+    items = vim.eval('a:items')  # ... List
+    input = vim.eval('a:input')
+    ispath = int(vim.eval('a:ispath'))
     limit = int(vim.eval('a:limit'))
     mmode = vim.eval('a:mmode')
-    aregex = int(vim.eval('a:regex'))
+    regex_flag = int(vim.eval('a:regex_flag'))
 
-    rez = vim.eval('s:rez')
-
-    specialChars = ['^','$','.','{','}','(',')','[',']','\\','/','+']
-
-    regex = ''
-    if aregex == 1:
-        regex = astr
+    if regex_flag == 1:
+        # BUG: We use Python's regex engine here instead of VIM
+        regex = [re.compile(input)]
     else:
-        if len(lowAstr) == 1:
-            c = lowAstr
-            if c in specialChars:
-                c = '\\' + c
-            regex += c
-        else:
-            for c in lowAstr[:-1]:
-                if c in specialChars:
-                    c = '\\' + c
-                regex += c + '[^' + c + ']*'
-            else:
-                c = lowAstr[-1]
-                if c in specialChars:
-                    c = '\\' + c
-                regex += c
+        words = input.split()
+        words = map(re.escape, words)
+        # regex[0]: Immitating Fasd's behavior -- the filename must be matched
+        # by the last word.
+        # regex[1]: CtrlP's default matching strategy.
+        regex = [re.compile('.*'.join(words) + '[^/]*$', re.I), 
+                 re.compile('.*'.join(words) + '.*$', re.I)]
 
     res = []
-    prog = re.compile(regex)
+    # Generators generating matched lines
+    for i in range(len(regex)):
+        r = regex[i]
+        if mmode == 'filename-only':
+            # Only the part after the last / is checked
+            res_gen = (l for l in items if r.search(l.split('/')[-1]))
+        elif mmode == 'first-non-tab':
+            # Only the part before the first \t is checked
+            res_gen = (l for l in items if r.search(l.split('\t')[0]))
+        elif mmode == 'until-last-tab':
+            # Only the part before the last \t is checked
+            res_gen = (l for l in items if r.search(l.rsplit('\t', 1)[0]))
+        else:
+            # A full line match
+            res_gen = (l for l in items if r.search(l))
 
-    def filename_score(line):
-        # get filename via reverse find to improve performance
-        slashPos = line.rfind('/')
-        line = line if slashPos == -1 else line[slashPos + 1:]
+        # res_gen.next() consums most of the time
+        for l in res_gen:
+            if l not in res:
+                res.append(l)
+                if len(res) == limit:
+                    break
 
-        lineLower = line.lower()
-        result = prog.search(lineLower)
-        if result:
-            score = result.end() - result.start() + 1
-            score = score + ( len(lineLower) + 1 ) / 100.0
-            score = score + ( len(line) + 1 ) / 1000.0
-            return 1000.0 / score
-
-        return 0
-
-
-    def path_score(line):
-        lineLower = line.lower()
-        result = prog.search(lineLower)
-        if result:
-            score = result.end() - result.start() + 1
-            score = score + ( len(lineLower) + 1 ) / 100.0
-            return 1000.0 / score
-
-        return 0
-
-
-    if mmode == 'filename-only':
-        res = [(filename_score(line), line) for line in items]
-
-    elif mmode == 'first-non-tab':
-        res = [(path_score(line.split('\t')[0]), line) for line in items]
-
-    elif mmode == 'until-last-tab':
-        res = [(path_score(line.rsplit('\t')[0]), line) for line in items]
-
-    else:
-        res = [(path_score(line), line) for line in items]
-
-    #rez.extend([line for score, line in heapq.nlargest(limit, res)])
-    for score, line in heapq.nlargest(limit, res):
-        if score != 0:
-            rez.extend([line])
+        if len(res) == limit:
+            break
 
     # Use double quoted vim strings and escape \
-    vimrez = ['"' + line.replace('\\', '\\\\').replace('"', '\\"') + '"' for line in rez]
+    res_quoted = ['"' + RE_ESCAPE_QUOTE.sub(r'\\', l) + '"' for l in res]
 
-    vim.command("let s:regex = '%s'" % regex)
-    vim.command('let s:rez = [%s]' % ','.join(vimrez))
-    
+    vim.command('let s:res = [{0}]'.format(','.join(res_quoted)))
