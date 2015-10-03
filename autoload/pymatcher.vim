@@ -87,12 +87,12 @@ fu! s:highlight(input, mmode, regex)
     cal matchadd('CtrlPLinePre', '^>')
 endf
 
-function! pymatcher#PyMatch(items, input, limit, mmode, ispath, crfile, regex_flag)
-    cal s:highlight(a:input, a:mmode, a:regex_flag)
+function! pymatcher#PyMatch(items, query, limit, mmode, ispath, crfile, regex_flag)
+    cal s:highlight(a:query, a:mmode, a:regex_flag)
 
-    let g:pym_debug = a:input
+    let g:pym_debug = a:query
 "   CtrlPyMatch will write matched line into list s:res
-    execute 'python' . (has('python3') ? '3' : '') . ' CtrlPPyMatch()'
+    execute 'python' . (has('python3') ? '3' : '') . ' ctrlp_py_matcher()'
 
     return s:res
 endfunction

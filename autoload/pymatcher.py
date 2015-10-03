@@ -4,19 +4,20 @@ import re
 RE_ESCAPE_QUOTE = re.compile(r'(?=\\|")')
 
 
-def CtrlPPyMatch():
+def ctrlp_py_matcher():
+    """Python matcher for CtrlP"""
     items = vim.eval('a:items')  # ... List
-    input = vim.eval('a:input')
+    query = vim.eval('a:query')
     limit = int(vim.eval('a:limit'))
     mmode = vim.eval('a:mmode')
     regex_flag = int(vim.eval('a:regex_flag'))
 
     if regex_flag == 1:
         # BUG: We use Python's regex engine here instead of VIM
-        regex = [re.compile(input)]
+        regex = [re.compile(query)]
     else:
-        words = input.split()
-        words = map(re.escape, words)
+        words = query.split()
+        words = [re.escape(w) for w in words]
         # regex[0]: Immitating Fasd's behavior -- the filename must be matched
         # by the last word.
         # regex[1]: CtrlP's default matching strategy.
