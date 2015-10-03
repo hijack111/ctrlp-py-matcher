@@ -12,15 +12,21 @@ else
   execute 'pyfile ' . s:plugin_path . '/pymatcher.py'
 endif
 
-fu! s:escapechars(chars)
+" Credit: CtrlP C matching extension
+"
+" By: Stanislav Golovanov <stgolovanov@gmail.com>
+"     MaxSt <https://github.com/MaxSt>
+"     Aaron Jensen <aaronjensen@gmail.com>
+
+fu! s:escapewords(words)
   if exists('+ssl') && !&ssl
-    cal map(a:chars, 'escape(v:val, ''\'')')
+    cal map(a:words, 'escape(v:val, ''\'')')
   en
   for each in ['^', '$', '.']
-    cal map(a:chars, 'escape(v:val, each)')
+    cal map(a:words, 'escape(v:val, each)')
   endfo
 
-  return a:chars
+  return a:words
 endfu
 
 fu! s:highlight(input, mmode, regex)
@@ -36,12 +42,12 @@ fu! s:highlight(input, mmode, regex)
       en
       cal matchadd('CtrlPMatch', '\c'.pat)
     el
-      let chars = split(a:input, ' \+')
-      let chars = s:escapechars(chars)
+      let words = split(a:input)
+      let words = s:escapechars(words)
 
       " Build a pattern like /a.*b.*c/ from abc (but with .\{-} non-greedy
       " matchers instead)
-      let pat = join(chars, '.\{-}')
+      let pat = join(words, '.\{-}')
       " Ensure we match the last version of our pattern
       let ending = '\(.*'.pat.'\)\@!'
       " Case insensitive
@@ -51,20 +57,20 @@ fu! s:highlight(input, mmode, regex)
         let beginning = beginning.'\([^\/]*$\)\@='
       end
 
-      for i in range(len(chars))
+      for i in range(len(words))
         " Surround our current target letter with \zs and \ze so it only
         " actually matches that one letter, but has all preceding and trailing
         " letters as well.
         " \zsa.*b.*c
         " a\(\zsb\|.*\zsb)\ze.*c
-        let charcopy = copy(chars)
+"         let words = copy(words)
         if i == 0
-          let charcopy[i] = '\zs'.charcopy[i].'\ze'
-          let middle = join(charcopy, '.\{-}')
+          let words[i] = '\zs'.words[i].'\ze'
+          let middle = join(words, '.\{-}')
         else
-          let before = join(charcopy[0:i-1], '.\{-}')
-          let after = join(charcopy[i+1:-1], '.\{-}')
-          let c = charcopy[i]
+          let before = join(words[0:i-1], '.\{-}')
+          let after = join(words[i+1:-1], '.\{-}')
+          let c = words[i]
           " for abc, match either ab.\{-}c or a.*b.\{-}c in that order
           let cpat = '\(\zs'.c.'\|'.'.*\zs'.c.'\)\ze.*'
           let middle = before.cpat.after
