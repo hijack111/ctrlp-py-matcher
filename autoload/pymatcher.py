@@ -1,8 +1,5 @@
 import vim
 import re
-import itertools
-import heapq
-from datetime import datetime
 
 RE_ESCAPE_QUOTE = re.compile(r'(?=\\|")')
 
@@ -10,7 +7,6 @@ RE_ESCAPE_QUOTE = re.compile(r'(?=\\|")')
 def CtrlPPyMatch():
     items = vim.eval('a:items')  # ... List
     input = vim.eval('a:input')
-    ispath = int(vim.eval('a:ispath'))
     limit = int(vim.eval('a:limit'))
     mmode = vim.eval('a:mmode')
     regex_flag = int(vim.eval('a:regex_flag'))
@@ -24,7 +20,7 @@ def CtrlPPyMatch():
         # regex[0]: Immitating Fasd's behavior -- the filename must be matched
         # by the last word.
         # regex[1]: CtrlP's default matching strategy.
-        regex = [re.compile('.*'.join(words) + '[^/]*$', re.I), 
+        regex = [re.compile('.*'.join(words) + '[^/]*$', re.I),
                  re.compile('.*'.join(words) + '.*$', re.I)]
 
     res = []
