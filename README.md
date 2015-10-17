@@ -32,17 +32,17 @@ let g:airline#extensions#tabline#enabled = 1
 
 ### Pathogen (https://github.com/tpope/vim-pathogen)
 ```
-git clone https://github.com/FelikZ/ctrlp-py-matcher ~/.vim/bundle/ctrlp-py-matcher
+git clone https://github.com/hijack111/ctrlp-py-matcher ~/.vim/bundle/ctrlp-py-matcher
 ```
 
 ### Vundle (https://github.com/gmarik/vundle)
 ```
-Plugin 'FelikZ/ctrlp-py-matcher'
+Plugin 'hijack111/ctrlp-py-matcher'
 ```
 
 ### NeoBundle (https://github.com/Shougo/neobundle.vim)
 ```
-NeoBundle 'FelikZ/ctrlp-py-matcher'
+NeoBundle 'hijack111/ctrlp-py-matcher'
 ```
 
 ### ~/.vimrc setup
